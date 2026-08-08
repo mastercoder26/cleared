@@ -13,6 +13,13 @@ import { simplifyAssignment } from './simplify.js'
 import { buildTodo } from './todo.js'
 import { generateDailySummary } from './dailySummary.js'
 import { DEMO_USER, DEMO_COURSES, demoCourseWork, findDemoCourseWork } from './demoData.js'
+import { identityFor } from './store.js'
+import { getAllProgress, saveProgress } from './progress.js'
+import { getUnstuckHelp } from './unstick.js'
+import { buildPlan } from './plan.js'
+import { buildWorkload } from './workload.js'
+import { LruCache } from './cache.js'
+import { RateLimiter, rateLimit } from './rateLimit.js'
 
 const app = express()
 app.use(express.json({ limit: '1mb' }))
@@ -32,6 +39,14 @@ app.use((req, res, next) => {
   res.set('Access-Control-Allow-Credentials', 'true')
   res.set('Access-Control-Allow-Headers', 'Content-Type')
   if (req.method === 'OPTIONS') return res.sendStatus(204)
+  next()
+})
+
+// Baseline security headers on every response.
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff')
+  res.set('Referrer-Policy', 'no-referrer')
+  res.set('X-Frame-Options', 'DENY')
   next()
 })
 
@@ -170,19 +185,40 @@ app.get(
   }),
 )
 
+// ---------------------------------------------------------------- helpers
+
+const MAX_ID_LENGTH = 200
+const isSaneId = (value) => typeof value === 'string' && value.length > 0 && value.length <= MAX_ID_LENGTH
+
+const requestIdentity = (req, session) => identityFor(session, req.session?.user)
+
+// Model-backed routes are the expensive, abusable ones — a small sliding
+// window per identity is enough to stop runaway retries without needing a
+// new dependency.
+const MODEL_ROUTE_WINDOW_MS = 60_000
+const MODEL_ROUTE_MAX_REQUESTS = 12
+const modelRouteLimiter = new RateLimiter({
+  windowMs: MODEL_ROUTE_WINDOW_MS,
+  maxRequests: MODEL_ROUTE_MAX_REQUESTS,
+})
+const limitModelRoute = rateLimit(modelRouteLimiter, (req) =>
+  req.session?.demo ? 'demo' : req.session?.user?.email ?? req.ip,
+)
+
 /**
  * The core of the product: hand one assignment to Claude, get back the plain
  * version and the step breakdown. Cached per assignment for the session's
  * lifetime so re-opening a card is instant and costs nothing.
  */
-const rewriteCache = new Map()
+const rewriteCache = new LruCache()
 
 app.post(
   '/api/simplify',
+  limitModelRoute,
   route(async (req, res) => {
     const session = await requireSession(req)
     const { courseId, workId, refresh } = req.body ?? {}
-    if (!courseId || !workId) {
+    if (!isSaneId(courseId) || !isSaneId(workId)) {
       return res.status(400).json({ error: 'courseId and workId are required.' })
     }
     if (!isClaudeConfigured()) {
@@ -229,10 +265,11 @@ app.get(
  * a new one is only generated once a day, or when the person picks a
  * different tone, or asks to refresh explicitly.
  */
-const summaryCache = new Map()
+const summaryCache = new LruCache()
 
 app.post(
   '/api/daily-summary',
+  limitModelRoute,
   route(async (req, res) => {
     const session = await requireSession(req)
     const tone = ['plain', 'encouraging', 'brief'].includes(req.body?.tone) ? req.body.tone : 'plain'
@@ -244,7 +281,7 @@ app.post(
       })
     }
 
-    const identity = session.mode === 'demo' ? 'demo' : req.session?.user?.email ?? 'unknown'
+    const identity = requestIdentity(req, session)
     const today = new Date().toISOString().slice(0, 10)
     const cacheKey = `${identity}:${today}:${tone}`
     if (!refresh && summaryCache.has(cacheKey)) {
@@ -255,6 +292,152 @@ app.post(
     const summary = await generateDailySummary(items, tone)
     summaryCache.set(cacheKey, summary)
     res.json({ summary, cached: false })
+  }),
+)
+
+// ---------------------------------------------------------------- progress
+
+app.get(
+  '/api/progress',
+  route(async (req, res) => {
+    const session = await requireSession(req)
+    const progress = await getAllProgress(requestIdentity(req, session))
+    res.json({ progress })
+  }),
+)
+
+app.put(
+  '/api/progress/:workId',
+  route(async (req, res) => {
+    const session = await requireSession(req)
+    const { workId } = req.params
+    const { courseId, ...patch } = req.body ?? {}
+    if (!isSaneId(workId)) return res.status(400).json({ error: 'workId is required.' })
+    const progress = await saveProgress(requestIdentity(req, session), workId, courseId, patch)
+    res.json({ progress })
+  }),
+)
+
+// ---------------------------------------------------------------- unstick
+
+const VALID_FEELINGS = ['dont-understand', 'too-big', 'cant-start', 'lost-interest']
+const MAX_TRIED_LENGTH = 2000
+
+app.post(
+  '/api/unstick',
+  limitModelRoute,
+  route(async (req, res) => {
+    const session = await requireSession(req)
+    const { courseId, workId, stepIndex, tried, feeling } = req.body ?? {}
+
+    if (!isSaneId(courseId) || !isSaneId(workId)) {
+      return res.status(400).json({ error: 'courseId and workId are required.' })
+    }
+    if (!VALID_FEELINGS.includes(feeling)) {
+      return res.status(400).json({ error: `feeling must be one of: ${VALID_FEELINGS.join(', ')}` })
+    }
+    if (stepIndex != null && (!Number.isInteger(stepIndex) || stepIndex < 0)) {
+      return res.status(400).json({ error: 'stepIndex must be a non-negative integer or null.' })
+    }
+    const triedText = typeof tried === 'string' ? tried.slice(0, MAX_TRIED_LENGTH) : ''
+    if (!isClaudeConfigured()) {
+      return res.status(503).json({
+        error: 'Getting unstuck needs an Anthropic API key. Add ANTHROPIC_API_KEY to server/.env.',
+      })
+    }
+
+    const assignment =
+      session.mode === 'demo'
+        ? findDemoCourseWork(courseId, workId)
+        : await getCourseWork(session.accessToken, courseId, workId)
+    if (!assignment) return res.status(404).json({ error: 'Assignment not found.' })
+
+    const courses =
+      session.mode === 'demo' ? DEMO_COURSES : await listCourses(session.accessToken)
+    const course = courses.find((c) => c.id === courseId) ?? null
+    const step = stepIndex != null ? { index: stepIndex, action: `step ${stepIndex + 1}`, detail: '' } : null
+
+    const help = await getUnstuckHelp({ assignment, course, step, tried: triedText, feeling })
+    res.json({ help })
+  }),
+)
+
+// ---------------------------------------------------------------- plan
+
+const planCache = new LruCache()
+
+app.post(
+  '/api/plan',
+  limitModelRoute,
+  route(async (req, res) => {
+    const session = await requireSession(req)
+    const { courseId, workId, refresh } = req.body ?? {}
+    if (!isSaneId(courseId) || !isSaneId(workId)) {
+      return res.status(400).json({ error: 'courseId and workId are required.' })
+    }
+    if (!isClaudeConfigured()) {
+      return res.status(503).json({
+        error: 'The plan needs an Anthropic API key. Add ANTHROPIC_API_KEY to server/.env.',
+      })
+    }
+
+    const assignment =
+      session.mode === 'demo'
+        ? findDemoCourseWork(courseId, workId)
+        : await getCourseWork(session.accessToken, courseId, workId)
+    if (!assignment) return res.status(404).json({ error: 'Assignment not found.' })
+
+    const courses =
+      session.mode === 'demo' ? DEMO_COURSES : await listCourses(session.accessToken)
+    const course = courses.find((c) => c.id === courseId) ?? null
+
+    const cacheKey = `${courseId}:${workId}:${assignment.dueAt ?? 'none'}`
+    if (!refresh && planCache.has(cacheKey)) {
+      return res.json({ plan: planCache.get(cacheKey), cached: true })
+    }
+
+    let steps = []
+    try {
+      const rewrite = await simplifyAssignment(assignment, course)
+      steps = rewrite.steps
+    } catch {
+      // Planning still works from the raw description if the rewrite fails.
+      steps = []
+    }
+
+    const plan = await buildPlan({ assignment, course, steps })
+    planCache.set(cacheKey, plan)
+    res.json({ plan, cached: false })
+  }),
+)
+
+// ---------------------------------------------------------------- workload
+
+const DEFAULT_WORKLOAD_DAYS = 14
+const MIN_WORKLOAD_DAYS = 1
+const MAX_WORKLOAD_DAYS = 60
+
+app.get(
+  '/api/workload',
+  route(async (req, res) => {
+    const session = await requireSession(req)
+    const requested = Number.parseInt(req.query.days, 10)
+    const days = Number.isInteger(requested)
+      ? Math.min(MAX_WORKLOAD_DAYS, Math.max(MIN_WORKLOAD_DAYS, requested))
+      : DEFAULT_WORKLOAD_DAYS
+
+    const { items } = await buildTodo(session)
+    const workloadDays = buildWorkload(items, days)
+    res.json({ days: workloadDays })
+  }),
+)
+
+// ---------------------------------------------------------------- health
+
+app.get(
+  '/api/health',
+  route(async (req, res) => {
+    res.json({ ok: true, google: isGoogleConfigured(), claude: isClaudeConfigured() })
   }),
 )
 

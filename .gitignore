@@ -5,3 +5,6 @@ dist/
 *.log
 .DS_Store
 .vite/
+
+# Local progress/notes store — this is a student's own data, never committed.
+server/.data/
