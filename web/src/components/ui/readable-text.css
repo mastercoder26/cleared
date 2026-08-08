@@ -1,0 +1,11 @@
+.readable-text {
+  display: inline;
+}
+
+.rt-word {
+  display: inline;
+}
+
+.rt-word__bold {
+  font-weight: 800;
+}

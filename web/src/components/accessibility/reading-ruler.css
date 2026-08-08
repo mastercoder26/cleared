@@ -1,0 +1,48 @@
+.reading-ruler {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 850;
+}
+.reading-ruler__dim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='dark'] .reading-ruler__dim {
+  background: rgba(0, 0, 0, 0.55);
+}
+.reading-ruler__dim--top {
+  top: 0;
+  height: 0;
+}
+.reading-ruler__dim--bottom {
+  bottom: 0;
+  top: 100%;
+}
+:root[data-motion='full'] .reading-ruler__dim {
+  transition: height 60ms linear, top 60ms linear;
+}
+
+.reading-spotlight {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 850;
+  --spot-y: 50vh;
+  background: radial-gradient(
+    600px 140px at 50% var(--spot-y),
+    transparent 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+:root[data-theme='dark'] .reading-spotlight {
+  background: radial-gradient(
+    600px 140px at 50% var(--spot-y),
+    transparent 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}

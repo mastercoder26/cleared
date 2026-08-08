@@ -1,0 +1,59 @@
+.onboarding-dialog {
+  width: min(520px, 100%);
+}
+
+.onboarding__step {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 var(--space-4);
+}
+
+.onboarding__lead {
+  font-size: 1.05rem;
+  color: var(--ink);
+  margin-bottom: var(--space-5);
+}
+
+.onboarding__profiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.onboarding__profile {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--bg);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+.onboarding__profile:hover {
+  border-color: var(--border-strong);
+}
+.onboarding__profile[data-selected='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.onboarding__profile-label {
+  font-weight: 700;
+  color: var(--ink);
+}
+.onboarding__profile-tagline {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.onboarding__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

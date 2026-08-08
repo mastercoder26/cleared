@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { speak, speechSupported, stopSpeaking } from '../../lib/speak'
+import { speechController, speechSupported } from '../../lib/speak'
 import { useSettings } from '../../lib/settings'
 
 /** Only rendered where read-aloud is genuinely useful; hidden entirely if disabled or unsupported. */
@@ -9,26 +9,25 @@ export function ReadAloudButton({ text, label = 'Read aloud' }: { text: string; 
 
   useEffect(() => {
     if (!speechSupported) return
-    const onEnd = () => setSpeaking(false)
-    window.speechSynthesis.addEventListener('end', onEnd)
-    window.speechSynthesis.addEventListener('cancel', onEnd)
-    return () => {
-      window.speechSynthesis.removeEventListener('end', onEnd)
-      window.speechSynthesis.removeEventListener('cancel', onEnd)
-    }
+    // The old code listened for 'end'/'cancel' directly on speechSynthesis,
+    // which the Web Speech API never actually fires — only utterances do.
+    // speechController tracks real state centrally instead.
+    return speechController.onStateChange((state) => setSpeaking(state === 'speaking'))
   }, [])
 
-  useEffect(() => stopSpeaking, []) // stop any lingering utterance if the component unmounts
+  useEffect(() => () => speechController.stop(), []) // stop any lingering utterance if the component unmounts
 
   if (!settings.readAloudEnabled || !speechSupported) return null
 
   const toggle = () => {
     if (speaking) {
-      stopSpeaking()
-      setSpeaking(false)
+      speechController.stop()
     } else {
-      speak(text)
-      setSpeaking(true)
+      speechController.speak(text, {
+        rate: settings.speechRate,
+        pitch: settings.speechPitch,
+        voiceURI: settings.speechVoiceURI,
+      })
     }
   }
 

@@ -48,6 +48,11 @@
   font-weight: 600;
   padding: var(--space-2) 0;
   border-bottom: 2px solid transparent;
+  transition: color var(--motion-fast) var(--ease), border-color var(--motion-fast) var(--ease);
+}
+
+.shell-nav__link:hover {
+  color: var(--ink);
 }
 
 .shell-nav__link.active {
@@ -75,9 +80,16 @@
   color: var(--ink-soft);
 }
 
+.shell-icon-btn {
+  transition: border-color var(--motion-fast) var(--ease), color var(--motion-fast) var(--ease),
+    background var(--motion-fast) var(--ease);
+}
 .shell-icon-btn:hover {
   border-color: var(--border-strong);
   color: var(--ink);
+}
+.shell-icon-btn:active {
+  background: var(--bg-sunken);
 }
 
 .shell-user {

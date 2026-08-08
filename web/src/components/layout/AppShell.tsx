@@ -1,19 +1,42 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
+import { useHotkeys, type HotkeyBinding } from '../../hooks/useHotkeys'
+import { LiveRegionProvider } from '../../lib/a11y/LiveRegion'
 import { AccessibilityPanel } from '../accessibility/AccessibilityPanel'
+import { OnboardingFlow } from '../accessibility/OnboardingFlow'
+import { ReadingRuler } from '../accessibility/ReadingRuler'
+import { CommandPalette } from '../ui/CommandPalette'
+import { ShortcutsSheet } from '../ui/ShortcutsSheet'
+import { useSettings } from '../../lib/settings'
 import './app-shell.css'
 
 /**
  * The persistent frame: skip link, header nav, accessibility panel trigger,
- * and the routed page content in <main>. Every page renders inside this.
+ * command palette, reading supports, live region, and the routed page
+ * content in <main>. Every page renders inside this.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const { me, signedIn, signOut } = useAuth()
+  const { settings } = useSettings()
   const [panelOpen, setPanelOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [onboardingOpen, setOnboardingOpen] = useState(false)
+
+  const showOnboarding = signedIn && !settings.hasSeenOnboarding
+
+  const bindings = useMemo<HotkeyBinding[]>(
+    () => [
+      { combo: 'mod+k', handler: () => setPaletteOpen(true) },
+      { combo: '?', handler: () => setShortcutsOpen(true) },
+    ],
+    [],
+  )
+  useHotkeys(bindings)
 
   return (
-    <>
+    <LiveRegionProvider>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -52,6 +75,22 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="shell-icon-btn"
+              onClick={() => setPaletteOpen(true)}
+              aria-haspopup="dialog"
+              title="Command palette (Ctrl/Cmd+K)"
+            >
+              <span aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="shell-icon-btn__label">Search</span>
+            </button>
+
+            <button
+              type="button"
+              className="shell-icon-btn"
               onClick={() => setPanelOpen(true)}
               aria-haspopup="dialog"
             >
@@ -87,8 +126,23 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
 
       <div className="reading-overlay" aria-hidden="true" />
+      <ReadingRuler />
 
-      <AccessibilityPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
-    </>
+      <AccessibilityPanel
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        onReplayOnboarding={() => {
+          setPanelOpen(false)
+          setOnboardingOpen(true)
+        }}
+      />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onOpenAccessibilityPanel={() => setPanelOpen(true)}
+      />
+      <ShortcutsSheet open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <OnboardingFlow open={showOnboarding || onboardingOpen} onDone={() => setOnboardingOpen(false)} />
+    </LiveRegionProvider>
   )
 }

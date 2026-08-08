@@ -8,6 +8,8 @@ export type AccentColor = 'teal' | 'indigo' | 'plum' | 'forest' | 'slate'
 export type OverlayTint = 'none' | 'blue' | 'green' | 'yellow' | 'rose'
 export type ContentWidth = 'standard' | 'narrow'
 export type TodoSort = 'due' | 'class'
+export type ReadingRuler = 'off' | 'ruler' | 'spotlight'
+export type ProfileId = 'dyslexia' | 'adhd' | 'low-vision' | 'sensory-calm' | 'screen-reader'
 
 export interface Settings {
   // Display & accessibility
@@ -24,6 +26,25 @@ export interface Settings {
   overlayTint: OverlayTint
   readAloudEnabled: boolean
   contentWidth: ContentWidth
+
+  // Reading supports
+  bionicReading: boolean
+  readingRuler: ReadingRuler
+  paragraphFocus: boolean
+  extraWordSpacing: boolean
+
+  // Speech controller
+  speechRate: number
+  speechPitch: number
+  speechVoiceURI: string | null
+
+  // Screen-reader-focused extras
+  verboseAnnouncements: boolean
+  skipLinkEmphasis: boolean
+
+  // Onboarding + profiles
+  hasSeenOnboarding: boolean
+  lastAppliedProfileId: ProfileId | null
 
   // Today feed preferences
   hiddenCourseIds: string[]
@@ -51,6 +72,21 @@ const DEFAULTS: Settings = {
   readAloudEnabled: true,
   contentWidth: 'standard',
 
+  bionicReading: false,
+  readingRuler: 'off',
+  paragraphFocus: false,
+  extraWordSpacing: false,
+
+  speechRate: 1,
+  speechPitch: 1,
+  speechVoiceURI: null,
+
+  verboseAnnouncements: false,
+  skipLinkEmphasis: false,
+
+  hasSeenOnboarding: false,
+  lastAppliedProfileId: null,
+
   hiddenCourseIds: [],
   todoSort: 'due',
   hideDoneInFeed: true,
@@ -59,13 +95,20 @@ const DEFAULTS: Settings = {
   dismissedWorkIds: [],
 }
 
-const STORAGE_KEY = 'cleared.settings.v2'
+const STORAGE_KEY = 'cleared.settings.v3'
+// Read from these if v3 has never been written, so upgrading never resets a
+// person's saved accessibility choices — those defaults are the whole point.
+const LEGACY_STORAGE_KEYS = ['cleared.settings.v2']
 
 function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULTS
-    return { ...DEFAULTS, ...JSON.parse(raw) }
+    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) }
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      const legacyRaw = localStorage.getItem(legacyKey)
+      if (legacyRaw) return { ...DEFAULTS, ...JSON.parse(legacyRaw) }
+    }
+    return DEFAULTS
   } catch {
     return DEFAULTS
   }
@@ -74,6 +117,10 @@ function loadSettings(): Settings {
 interface SettingsContextValue {
   settings: Settings
   update: <K extends keyof Settings>(key: K, value: Settings[K]) => void
+  /** Applies several settings at once — used by profiles and onboarding — and
+      records which profile (if any) was last applied, so the panel can show
+      "Custom" once the person's tweaks diverge from it. */
+  applyMany: (patch: Partial<Settings>, profileId: ProfileId | null) => void
   toggleHiddenCourse: (courseId: string) => void
   toggleDismissed: (workId: string) => void
   reset: () => void
@@ -99,6 +146,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.dataset.focus = settings.focusMode ? 'on' : 'off'
     root.dataset.contentWidth = settings.contentWidth
     root.dataset.overlayTint = settings.overlayTint
+    root.dataset.readingRuler = settings.readingRuler
+    root.dataset.paragraphFocus = settings.paragraphFocus ? 'on' : 'off'
+    root.dataset.wordSpacing = settings.extraWordSpacing ? 'boost' : 'normal'
+    root.dataset.skipLinkEmphasis = String(settings.skipLinkEmphasis)
   }, [settings])
 
   // Respect the OS-level reduced-motion preference on first load, without
@@ -114,6 +165,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     () => ({
       settings,
       update: (key, val) => setSettings((s) => ({ ...s, [key]: val })),
+      applyMany: (patch, profileId) =>
+        setSettings((s) => ({ ...s, ...patch, lastAppliedProfileId: profileId })),
       toggleHiddenCourse: (courseId) =>
         setSettings((s) => ({
           ...s,
