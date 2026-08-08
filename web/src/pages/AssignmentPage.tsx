@@ -3,10 +3,18 @@ import { Link, useParams } from 'react-router-dom'
 import { api, ApiError } from '../lib/api'
 import type { Course, CourseWork, Rewrite } from '../lib/types'
 import { formatDue } from '../lib/due'
+import { useWorkProgress } from '../lib/progress'
 import { StateBlock } from '../components/ui/StateBlock'
 import { Button } from '../components/ui/Button'
 import { ReadAloudButton } from '../components/ui/ReadAloudButton'
+import { StatusControl } from '../components/assignment/StatusControl'
+import { StepsChecklist } from '../components/assignment/StepsChecklist'
+import { NotesField } from '../components/assignment/NotesField'
+import { StartWorkingButton } from '../components/assignment/StartWorkingButton'
+import { PlanCard } from '../components/assignment/PlanCard'
+import { UnstickFlow } from '../components/focus/UnstickFlow'
 import '../components/assignment/assignment.css'
+import '../components/focus/focus.css'
 
 type ViewMode = 'plain' | 'steps' | 'original'
 
@@ -25,7 +33,9 @@ export function AssignmentPage() {
   const [rewriteError, setRewriteError] = useState<string | null>(null)
   const [rewriteLoading, setRewriteLoading] = useState(false)
   const [view, setView] = useState<ViewMode>('plain')
-  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set())
+  const [showUnstick, setShowUnstick] = useState(false)
+
+  const { progress, syncState, setStatus, toggleStep, setNotes } = useWorkProgress(courseId, workId)
 
   useEffect(() => {
     if (!courseId || !workId) return
@@ -56,7 +66,6 @@ export function AssignmentPage() {
       try {
         const { rewrite } = await api.simplify(courseId, workId, refresh)
         setRewrite(rewrite)
-        setCheckedSteps(new Set())
       } catch (err) {
         setRewriteError(err instanceof ApiError ? err.message : 'Could not simplify this assignment.')
       } finally {
@@ -78,13 +87,9 @@ export function AssignmentPage() {
     return <StateBlock kind="loading" title="Loading assignment…" />
   }
 
-  const toggleStep = (i: number) => {
-    setCheckedSteps((prev) => {
-      const next = new Set(prev)
-      if (next.has(i)) next.delete(i)
-      else next.add(i)
-      return next
-    })
+  const handleStatusChange = (status: NonNullable<typeof progress>['status']) => {
+    setStatus(status)
+    if (status === 'stuck') setShowUnstick(true)
   }
 
   return (
@@ -104,6 +109,20 @@ export function AssignmentPage() {
           )}
         </div>
       </header>
+
+      {courseId && workId && <PlanCard courseId={courseId} workId={workId} />}
+
+      {progress && (
+        <StatusControl status={progress.status} syncState={syncState} onChange={handleStatusChange} />
+      )}
+
+      {courseId && workId && (
+        <StartWorkingButton courseId={courseId} workId={workId} ready={Boolean(rewrite && rewrite.steps.length > 0)} />
+      )}
+
+      <button type="button" className="unstick-inline-trigger" onClick={() => setShowUnstick(true)}>
+        I'm stuck on this
+      </button>
 
       <div className="view-toggle" role="tablist" aria-label="View mode">
         <ViewTab mode="plain" current={view} onClick={setView}>
@@ -136,11 +155,23 @@ export function AssignmentPage() {
         <PlainView rewrite={rewrite} onRefresh={() => void runSimplify(true)} />
       )}
 
-      {rewrite && !rewriteLoading && view === 'steps' && (
-        <StepsView rewrite={rewrite} checked={checkedSteps} onToggle={toggleStep} />
+      {rewrite && !rewriteLoading && view === 'steps' && progress && (
+        <StepsChecklist rewrite={rewrite} completedSteps={progress.completedSteps} onToggle={toggleStep} />
       )}
 
       {view === 'original' && <OriginalView item={item} />}
+
+      {progress && <NotesField value={progress.notes} onChange={setNotes} />}
+
+      {showUnstick && courseId && workId && (
+        <UnstickFlow
+          courseId={courseId}
+          workId={workId}
+          step={null}
+          stepIndex={null}
+          onClose={() => setShowUnstick(false)}
+        />
+      )}
     </div>
   )
 }
@@ -239,45 +270,6 @@ function PlainRow({ label, value }: { label: string; value: string }) {
         <p className="plain-card__row-value">{value}</p>
       </div>
     </div>
-  )
-}
-
-function StepsView({
-  rewrite,
-  checked,
-  onToggle,
-}: {
-  rewrite: Rewrite
-  checked: Set<number>
-  onToggle: (i: number) => void
-}) {
-  const totalMinutes = rewrite.steps.reduce((sum, s) => sum + s.minutes, 0)
-  return (
-    <>
-      <p style={{ color: 'var(--ink-soft)', marginBottom: 'var(--space-4)' }}>
-        {rewrite.steps.length} steps · about {totalMinutes} minutes total. Check them off as you go.
-      </p>
-      <ol className="steps">
-        {rewrite.steps.map((step, i) => (
-          <li key={i} className="step" data-done={checked.has(i)}>
-            <button
-              type="button"
-              className="step__check"
-              aria-pressed={checked.has(i)}
-              aria-label={`Mark step ${i + 1}, ${step.action}, as ${checked.has(i) ? 'not done' : 'done'}`}
-              onClick={() => onToggle(i)}
-            >
-              {checked.has(i) ? '✓' : i + 1}
-            </button>
-            <div className="step__body">
-              <p className="step__action">{step.action}</p>
-              {step.detail && <p className="step__detail">{step.detail}</p>}
-            </div>
-            <span className="step__minutes">~{step.minutes} min</span>
-          </li>
-        ))}
-      </ol>
-    </>
   )
 }
 

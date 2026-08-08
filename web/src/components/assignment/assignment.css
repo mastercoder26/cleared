@@ -279,3 +279,264 @@
 .effort-pill {
   text-transform: capitalize;
 }
+
+/* ------------------------------------------------------------------ */
+/* Status control                                                      */
+/* ------------------------------------------------------------------ */
+
+.status-control {
+  margin-bottom: var(--space-4);
+}
+
+.status-control__buttons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.status-control__btn {
+  background: var(--bg-raised);
+  border: none;
+  border-right: var(--border-width) solid var(--border);
+  padding: var(--space-3) var(--space-4);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.status-control__btn:last-child { border-right: none; }
+.status-control__btn:hover { background: var(--bg-sunken); color: var(--ink); }
+
+.status-control__btn[data-active='true'] {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.status-control__btn[data-status='stuck'][data-active='true'] {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.status-control__btn[data-status='done'][data-active='true'] {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.status-control__sync {
+  margin: var(--space-2) 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+.status-control__sync[data-state='error'] { color: var(--danger); }
+.status-control__sync[data-state='offline'] { color: var(--warn); }
+
+/* ------------------------------------------------------------------ */
+/* Start working CTA                                                   */
+/* ------------------------------------------------------------------ */
+
+.start-working-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-decoration: none;
+  margin-bottom: var(--space-3);
+  transition: background var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+}
+.start-working-btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--bg);
+}
+.start-working-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.start-working-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.start-working-btn__icon {
+  display: inline-flex;
+}
+
+.unstick-inline-trigger {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  text-decoration: underline;
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+}
+.unstick-inline-trigger:hover { color: var(--warn); }
+
+/* ------------------------------------------------------------------ */
+/* Steps checklist (real checkboxes)                                   */
+/* ------------------------------------------------------------------ */
+
+.steps-summary {
+  color: var(--ink-soft);
+  margin-bottom: var(--space-4);
+}
+
+.step__checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.step__body {
+  display: flex;
+  gap: var(--space-4);
+  flex: 1;
+  cursor: pointer;
+}
+
+.step__number {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: var(--border-width) solid var(--border-strong);
+  background: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.step__checkbox:focus-visible ~ .step__body .step__number {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.step[data-done='true'] .step__number {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.step[data-done='true'] .step__action {
+  text-decoration: line-through;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ */
+/* Plan card                                                           */
+/* ------------------------------------------------------------------ */
+
+.plan-card {
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--accent-soft-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.plan-card--quiet {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border);
+  padding: var(--space-3) var(--space-4);
+}
+.plan-card__quiet-text {
+  color: var(--ink-faint);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.plan-card__heading {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  margin-bottom: var(--space-1);
+}
+
+.plan-card__start-by {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: var(--space-2);
+}
+
+.plan-card__rationale {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  margin-bottom: var(--space-3);
+}
+
+.plan-card__sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-card__session {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: var(--border-width) solid var(--border);
+  flex-wrap: wrap;
+}
+.plan-card__session:first-child { border-top: none; }
+
+.plan-card__session-label {
+  font-weight: 700;
+  min-width: 12ch;
+}
+.plan-card__session-goal {
+  color: var(--ink-soft);
+  flex: 1;
+}
+.plan-card__session-minutes {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Notes field                                                         */
+/* ------------------------------------------------------------------ */
+
+.notes-field {
+  margin: var(--space-6) 0;
+}
+
+.notes-field__heading {
+  font-size: 1.05rem;
+  margin-bottom: var(--space-1);
+}
+
+.notes-field__hint {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-2);
+}
+
+.notes-field__textarea {
+  width: 100%;
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  resize: vertical;
+  min-height: 90px;
+}
+.notes-field__textarea:focus-visible {
+  border-color: var(--accent);
+}
