@@ -1,4 +1,18 @@
-import type { Course, CourseWork, DailySummary, Me, Rewrite, SummaryTone, TodoItem } from './types'
+import type {
+  Course,
+  CourseWork,
+  DailySummary,
+  Me,
+  ProgressMap,
+  Rewrite,
+  StuckFeeling,
+  SummaryTone,
+  TodoItem,
+  UnstickHelp,
+  WorkloadDay,
+  WorkPlan,
+  WorkProgress,
+} from './types'
 
 const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8787'
 
@@ -45,6 +59,33 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ tone, refresh }),
     }),
+
+  progress: () => request<{ progress: ProgressMap }>('/api/progress'),
+  saveProgress: (workId: string, patch: Partial<WorkProgress> & { courseId: string }) =>
+    request<{ progress: WorkProgress }>(`/api/progress/${workId}`, {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    }),
+
+  unstick: (input: {
+    courseId: string
+    workId: string
+    stepIndex: number | null
+    tried: string
+    feeling: StuckFeeling
+  }) =>
+    request<{ help: UnstickHelp }>('/api/unstick', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  plan: (courseId: string, workId: string, refresh = false) =>
+    request<{ plan: WorkPlan; cached: boolean }>('/api/plan', {
+      method: 'POST',
+      body: JSON.stringify({ courseId, workId, refresh }),
+    }),
+
+  workload: (days = 14) => request<{ days: WorkloadDay[] }>(`/api/workload?days=${days}`),
 }
 
 export { ApiError }
