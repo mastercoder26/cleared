@@ -1,0 +1,49 @@
+/* Kept in its own file rather than index.css so the crash screen still has
+   styles even if the token sheet is what failed to load. Values are
+   deliberately self-sufficient, with the design tokens as an enhancement. */
+
+.crash {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg, #faf9f6);
+  color: var(--ink, #1c1b19);
+}
+
+.crash__inner {
+  max-width: 34rem;
+}
+
+.crash__title {
+  margin: 0 0 var(--space-4, 16px);
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.crash__body {
+  margin: 0 0 var(--space-5, 24px);
+  color: var(--ink-soft, #524f48);
+}
+
+.crash__details {
+  margin-top: var(--space-5, 24px);
+  color: var(--ink-faint, #8a867c);
+  font-size: 0.875rem;
+}
+
+.crash__details summary {
+  cursor: pointer;
+}
+
+.crash__details pre {
+  overflow-x: auto;
+  margin: var(--space-2, 8px) 0 0;
+  padding: var(--space-3, 12px);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-sunken, #f1efe9);
+  font-family: var(--font-mono, ui-monospace, Menlo, monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

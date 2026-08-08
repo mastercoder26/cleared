@@ -5,11 +5,14 @@ import { Button } from '../components/ui/Button'
 import './sign-in.css'
 
 export function SignInPage() {
-  const { me, startGoogleSignIn, startDemo } = useAuth()
+  const { me, startGoogleSignIn, startDemo, expiredMessage } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const authError = params.get('auth_error')
   const [busy, setBusy] = useState<'google' | 'demo' | null>(null)
+
+  // An OAuth failure is the more specific of the two, so it wins the banner.
+  const banner = authError ? decodeURIComponent(authError) : expiredMessage
 
   const handleGoogle = async () => {
     setBusy('google')
@@ -43,9 +46,9 @@ export function SignInPage() {
         </p>
       </div>
 
-      {authError && (
+      {banner && (
         <div className="signin__banner" role="alert">
-          {decodeURIComponent(authError)}
+          {banner}
         </div>
       )}
 

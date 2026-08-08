@@ -16,22 +16,60 @@ import type {
 
 const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8787'
 
+/** Status we use for "the request never reached the server" — distinct from any real HTTP code. */
+export const OFFLINE_STATUS = 0
+
 class ApiError extends Error {
   status: number
   constructor(message: string, status: number) {
     super(message)
     this.status = status
   }
+
+  /** The server was unreachable, as opposed to answering with an error. */
+  get isOffline(): boolean {
+    return this.status === OFFLINE_STATUS
+  }
+
+  /** The route isn't deployed yet or the feature is switched off server-side. */
+  get isUnavailable(): boolean {
+    return this.status === 404 || this.status === 503
+  }
+}
+
+/**
+ * A session can expire in the middle of any call, on any page. Rather than
+ * making every caller handle that, expiry is broadcast once here and the auth
+ * provider listens — so the whole app drops to signed-out together instead of
+ * leaving one screen showing stale data behind an expired cookie.
+ */
+export const SESSION_EXPIRED_EVENT = 'cleared:session-expired'
+
+function broadcastSessionExpiry() {
+  window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT))
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    credentials: 'include',
-    headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
-    ...init,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      credentials: 'include',
+      headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
+      ...init,
+    })
+  } catch {
+    // fetch only rejects on network failure — the server never answered.
+    throw new ApiError(
+      "Can't reach cleared right now. Check your connection and try again.",
+      OFFLINE_STATUS,
+    )
+  }
+
   const body = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(body.error ?? `Request failed (${res.status})`, res.status)
+  if (!res.ok) {
+    if (res.status === 401) broadcastSessionExpiry()
+    throw new ApiError(body.error ?? `Request failed (${res.status})`, res.status)
+  }
   return body as T
 }
 
