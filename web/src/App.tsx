@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { AppShell } from './components/layout/AppShell'
 import { SignInPage } from './pages/SignInPage'
+import { TodayPage } from './pages/TodayPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { CourseWorkPage } from './pages/CourseWorkPage'
 import { AssignmentPage } from './pages/AssignmentPage'
@@ -21,7 +22,8 @@ function App() {
   return (
     <AppShell>
       <Routes>
-        <Route path="/" element={signedIn ? <Navigate to="/courses" replace /> : <SignInPage />} />
+        <Route path="/" element={signedIn ? <Navigate to="/today" replace /> : <SignInPage />} />
+        <Route path="/today" element={signedIn ? <TodayPage /> : <Navigate to="/" replace />} />
         <Route path="/courses" element={signedIn ? <CoursesPage /> : <Navigate to="/" replace />} />
         <Route
           path="/courses/:courseId"

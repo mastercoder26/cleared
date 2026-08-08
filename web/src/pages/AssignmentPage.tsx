@@ -5,6 +5,7 @@ import type { Course, CourseWork, Rewrite } from '../lib/types'
 import { formatDue } from '../lib/due'
 import { StateBlock } from '../components/ui/StateBlock'
 import { Button } from '../components/ui/Button'
+import { ReadAloudButton } from '../components/ui/ReadAloudButton'
 import '../components/assignment/assignment.css'
 
 type ViewMode = 'plain' | 'steps' | 'original'
@@ -170,10 +171,22 @@ function ViewTab({
 }
 
 function PlainView({ rewrite, onRefresh }: { rewrite: Rewrite; onRefresh: () => void }) {
+  const spoken = [
+    rewrite.plain.whatToDo,
+    rewrite.plain.handIn && `You hand in: ${rewrite.plain.handIn}`,
+    rewrite.plain.why,
+    rewrite.plain.watchOut && `Watch out: ${rewrite.plain.watchOut}`,
+  ]
+    .filter(Boolean)
+    .join('. ')
+
   return (
     <>
       <div className="plain-card">
-        <p className="plain-card__what">{rewrite.plain.whatToDo}</p>
+        <div className="plain-card__what-row">
+          <p className="plain-card__what">{rewrite.plain.whatToDo}</p>
+          <ReadAloudButton text={spoken} />
+        </div>
 
         {rewrite.plain.handIn && (
           <PlainRow label="What you hand in" value={rewrite.plain.handIn} />

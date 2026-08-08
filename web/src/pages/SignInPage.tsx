@@ -24,7 +24,7 @@ export function SignInPage() {
     setBusy('demo')
     try {
       await startDemo()
-      navigate('/courses')
+      navigate('/today')
     } finally {
       setBusy(null)
     }
