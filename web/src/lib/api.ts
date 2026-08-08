@@ -1,4 +1,4 @@
-import type { Course, CourseWork, Me, Rewrite } from './types'
+import type { Course, CourseWork, DailySummary, Me, Rewrite, SummaryTone, TodoItem } from './types'
 
 const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8787'
 
@@ -37,6 +37,13 @@ export const api = {
     request<{ rewrite: Rewrite; cached: boolean }>('/api/simplify', {
       method: 'POST',
       body: JSON.stringify({ courseId, workId, refresh }),
+    }),
+
+  todo: () => request<{ courses: Course[]; items: TodoItem[] }>('/api/todo'),
+  dailySummary: (tone: SummaryTone, refresh = false) =>
+    request<{ summary: DailySummary; cached: boolean }>('/api/daily-summary', {
+      method: 'POST',
+      body: JSON.stringify({ tone, refresh }),
     }),
 }
 

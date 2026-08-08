@@ -37,9 +37,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <nav aria-label="Primary" className="shell-nav">
             {signedIn && (
-              <NavLink to="/courses" className="shell-nav__link">
-                Classes
-              </NavLink>
+              <>
+                <NavLink to="/today" className="shell-nav__link">
+                  Today
+                </NavLink>
+                <NavLink to="/courses" className="shell-nav__link">
+                  Classes
+                </NavLink>
+              </>
             )}
           </nav>
 
@@ -80,6 +85,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main id="main-content" className="shell-main">
         {children}
       </main>
+
+      <div className="reading-overlay" aria-hidden="true" />
 
       <AccessibilityPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
     </>

@@ -1,11 +1,34 @@
 import { useEffect, useRef } from 'react'
-import { useSettings, type TextSize, type Typeface } from '../../lib/settings'
+import {
+  useSettings,
+  type AccentColor,
+  type ContentWidth,
+  type OverlayTint,
+  type TextSize,
+  type Typeface,
+} from '../../lib/settings'
 import './accessibility-panel.css'
 
 interface Props {
   open: boolean
   onClose: () => void
 }
+
+const ACCENTS: { id: AccentColor; label: string; swatch: string }[] = [
+  { id: 'teal', label: 'Teal', swatch: '#205e5a' },
+  { id: 'indigo', label: 'Indigo', swatch: '#3c4a9e' },
+  { id: 'plum', label: 'Plum', swatch: '#7a3466' },
+  { id: 'forest', label: 'Forest', swatch: '#386423' },
+  { id: 'slate', label: 'Slate', swatch: '#40525c' },
+]
+
+const TINTS: { id: OverlayTint; label: string; swatch: string | null }[] = [
+  { id: 'none', label: 'None', swatch: null },
+  { id: 'blue', label: 'Blue', swatch: '#bcd6f5' },
+  { id: 'green', label: 'Green', swatch: '#c7e8c9' },
+  { id: 'yellow', label: 'Yellow', swatch: '#f7e9a8' },
+  { id: 'rose', label: 'Rose', swatch: '#f3c9d6' },
+]
 
 /**
  * A real settings panel, not a decorative theme switcher: every control here
@@ -14,7 +37,6 @@ interface Props {
  */
 export function AccessibilityPanel({ open, onClose }: Props) {
   const { settings, update, reset } = useSettings()
-  const dialogRef = useRef<HTMLDivElement>(null)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -36,7 +58,6 @@ export function AccessibilityPanel({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="a11y-panel-title"
-        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="a11y-panel__header">
@@ -49,24 +70,66 @@ export function AccessibilityPanel({ open, onClose }: Props) {
         </div>
 
         <p className="a11y-intro">
-          These change how the whole app renders. Pick any combination — nothing here is exclusive.
+          Every control below is independent — turn on any combination that works for you.
         </p>
 
+        <h3 className="a11y-section">Color</h3>
+
         <fieldset className="a11y-group">
-          <legend>Color theme</legend>
+          <legend>Theme</legend>
           <div className="a11y-choice-row">
-            <ChoiceButton
-              active={settings.theme === 'light'}
-              onClick={() => update('theme', 'light')}
-              label="Light"
-            />
-            <ChoiceButton
-              active={settings.theme === 'dark'}
-              onClick={() => update('theme', 'dark')}
-              label="Dark"
-            />
+            <ChoiceButton active={settings.theme === 'light'} onClick={() => update('theme', 'light')} label="Light" />
+            <ChoiceButton active={settings.theme === 'dark'} onClick={() => update('theme', 'dark')} label="Dark" />
           </div>
         </fieldset>
+
+        <fieldset className="a11y-group">
+          <legend>Accent color</legend>
+          <div className="a11y-swatch-row">
+            {ACCENTS.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className="a11y-swatch"
+                style={{ background: a.swatch }}
+                aria-pressed={settings.accentColor === a.id}
+                aria-label={a.label}
+                title={a.label}
+                onClick={() => update('accentColor', a.id)}
+              />
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="a11y-group">
+          <legend>Reading overlay tint</legend>
+          <div className="a11y-swatch-row">
+            {TINTS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className="a11y-swatch a11y-swatch--tint"
+                style={t.swatch ? { background: t.swatch } : undefined}
+                aria-pressed={settings.overlayTint === t.id}
+                aria-label={t.label}
+                title={t.label}
+                onClick={() => update('overlayTint', t.id)}
+              >
+                {!t.swatch && '×'}
+              </button>
+            ))}
+          </div>
+          <p className="a11y-hint">A soft color wash over the whole page — some readers with dyslexia find this reduces visual strain.</p>
+        </fieldset>
+
+        <ToggleRow
+          label="High contrast"
+          hint="Pure black/white text and borders, stronger outlines. Overrides accent color."
+          checked={settings.highContrast}
+          onChange={(v) => update('highContrast', v)}
+        />
+
+        <h3 className="a11y-section">Text</h3>
 
         <fieldset className="a11y-group">
           <legend>Text size</legend>
@@ -85,26 +148,38 @@ export function AccessibilityPanel({ open, onClose }: Props) {
         <fieldset className="a11y-group">
           <legend>Typeface</legend>
           <div className="a11y-choice-row">
-            {(['standard', 'dyslexia-friendly'] as Typeface[]).map((face) => (
+            {(['standard', 'dyslexia-friendly', 'reading-proficiency'] as Typeface[]).map((face) => (
               <ChoiceButton
                 key={face}
                 active={settings.typeface === face}
                 onClick={() => update('typeface', face)}
-                label={face === 'standard' ? 'Standard' : 'Dyslexia-friendly'}
+                label={
+                  face === 'standard' ? 'Standard' : face === 'dyslexia-friendly' ? 'Dyslexia-friendly' : 'Reading-focused'
+                }
               />
             ))}
           </div>
           <p className="a11y-hint">
-            Dyslexia-friendly widens letter and word spacing and switches typeface.
+            Dyslexia-friendly widens letter and word spacing. Reading-focused uses Lexend, a typeface
+            built to improve reading proficiency.
           </p>
         </fieldset>
 
-        <ToggleRow
-          label="High contrast"
-          hint="Pure black/white text and borders, stronger outlines."
-          checked={settings.highContrast}
-          onChange={(v) => update('highContrast', v)}
-        />
+        <fieldset className="a11y-group">
+          <legend>Column width</legend>
+          <div className="a11y-choice-row">
+            {(['standard', 'narrow'] as ContentWidth[]).map((w) => (
+              <ChoiceButton
+                key={w}
+                active={settings.contentWidth === w}
+                onClick={() => update('contentWidth', w)}
+                label={w === 'standard' ? 'Standard' : 'Narrow'}
+              />
+            ))}
+          </div>
+          <p className="a11y-hint">A narrower column can make lines of text easier to track.</p>
+        </fieldset>
+
         <ToggleRow
           label="Extra line spacing"
           hint="More room between lines and paragraphs."
@@ -112,14 +187,41 @@ export function AccessibilityPanel({ open, onClose }: Props) {
           onChange={(v) => update('extraLineSpacing', v)}
         />
         <ToggleRow
+          label="Underline links"
+          hint="Makes links visible without relying on color alone."
+          checked={settings.underlineLinks}
+          onChange={(v) => update('underlineLinks', v)}
+        />
+
+        <h3 className="a11y-section">Motion &amp; interaction</h3>
+
+        <ToggleRow
           label="Reduce motion"
           hint="Turns off animations and transitions."
           checked={settings.reduceMotion}
           onChange={(v) => update('reduceMotion', v)}
         />
+        <ToggleRow
+          label="Larger tap targets"
+          hint="Bigger buttons and switches — easier to hit precisely."
+          checked={settings.largerTargets}
+          onChange={(v) => update('largerTargets', v)}
+        />
+        <ToggleRow
+          label="Focus mode"
+          hint="Hides secondary text and navigation so only the essentials show."
+          checked={settings.focusMode}
+          onChange={(v) => update('focusMode', v)}
+        />
+        <ToggleRow
+          label="Read-aloud buttons"
+          hint="Shows a button to have assignment text read out loud."
+          checked={settings.readAloudEnabled}
+          onChange={(v) => update('readAloudEnabled', v)}
+        />
 
         <button type="button" className="a11y-reset" onClick={reset}>
-          Reset to defaults
+          Reset everything to defaults
         </button>
       </div>
     </div>

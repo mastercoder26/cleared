@@ -10,7 +10,10 @@
     'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-dyslexia:
     'OpenDyslexic', 'Comic Sans MS', 'Atkinson Hyperlegible', -apple-system, sans-serif;
+  --font-reading: 'Lexend', 'Atkinson Hyperlegible', -apple-system, sans-serif;
   --font-mono: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+
+  --content-max-width: 1040px;
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -98,6 +101,23 @@
   --good-soft-border: #2c4a36;
 }
 
+/* ---- Accent color (a personalization choice, not an accessibility one —
+   high-contrast mode below always wins over it) ------------------------- */
+:root[data-accent='teal'][data-theme='light'] { --accent: #205e5a; --accent-ink: #ffffff; --accent-soft: #e3ebe9; --accent-soft-border: #b9cdc9; }
+:root[data-accent='teal'][data-theme='dark'] { --accent: #7fd3c7; --accent-ink: #0c1917; --accent-soft: #1c2b29; --accent-soft-border: #2e4b47; }
+
+:root[data-accent='indigo'][data-theme='light'] { --accent: #3c4a9e; --accent-ink: #ffffff; --accent-soft: #e6e8f6; --accent-soft-border: #bcc2e8; }
+:root[data-accent='indigo'][data-theme='dark'] { --accent: #a8b3ef; --accent-ink: #12163a; --accent-soft: #232752; --accent-soft-border: #383e73; }
+
+:root[data-accent='plum'][data-theme='light'] { --accent: #7a3466; --accent-ink: #ffffff; --accent-soft: #f1e4ed; --accent-soft-border: #d9b9cd; }
+:root[data-accent='plum'][data-theme='dark'] { --accent: #e5a9d3; --accent-ink: #33132b; --accent-soft: #351f30; --accent-soft-border: #5a3652; }
+
+:root[data-accent='forest'][data-theme='light'] { --accent: #386423; --accent-ink: #ffffff; --accent-soft: #e6efe0; --accent-soft-border: #bcd6ac; }
+:root[data-accent='forest'][data-theme='dark'] { --accent: #a4dd85; --accent-ink: #15290b; --accent-soft: #23331a; --accent-soft-border: #3c552b; }
+
+:root[data-accent='slate'][data-theme='light'] { --accent: #40525c; --accent-ink: #ffffff; --accent-soft: #e6ebed; --accent-soft-border: #bccbd1; }
+:root[data-accent='slate'][data-theme='dark'] { --accent: #a9c1cc; --accent-ink: #16232a; --accent-soft: #23343c; --accent-soft-border: #3d5560; }
+
 /* ---- High contrast (composes with either theme) ---------------------- */
 :root[data-contrast='high'][data-theme='light'] {
   --bg: #ffffff;
@@ -145,10 +165,81 @@
   --letter-spacing: 0.02em;
   --word-spacing: 0.12em;
 }
+:root[data-typeface='reading-proficiency'] {
+  --body-font: var(--font-reading);
+  --letter-spacing: 0.01em;
+  --word-spacing: 0.05em;
+}
 
 /* ---- Line spacing -------------------------------------------------------- */
 :root[data-line-spacing='normal'] { --line-height: 1.5; --paragraph-gap: 1em; }
 :root[data-line-spacing='relaxed'] { --line-height: 1.85; --paragraph-gap: 1.4em; }
+
+/* ---- Content width -------------------------------------------------------- */
+:root[data-content-width='standard'] { --content-max-width: 1040px; }
+:root[data-content-width='narrow'] { --content-max-width: 720px; }
+
+/* ---- Underline links -------------------------------------------------------- */
+:root[data-underline-links='true'] .shell-main a:not(.detail-header__crumb):not(.assignment-card):not(.course-card) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- Larger touch targets -------------------------------------------------------- */
+:root[data-targets='large'] .btn,
+:root[data-targets='large'] .a11y-choice,
+:root[data-targets='large'] .view-toggle__btn,
+:root[data-targets='large'] .shell-icon-btn,
+:root[data-targets='large'] .read-aloud-btn {
+  min-height: 48px;
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+:root[data-targets='large'] .step__check {
+  width: 40px;
+  height: 40px;
+}
+:root[data-targets='large'] .a11y-switch {
+  width: 52px;
+  height: 30px;
+}
+:root[data-targets='large'] .a11y-switch__thumb {
+  width: 22px;
+  height: 22px;
+}
+:root[data-targets='large'] .a11y-switch[data-on='true'] .a11y-switch__thumb {
+  transform: translateX(22px);
+}
+
+/* ---- Focus mode: fewer things visible at once -------------------------------------------------------- */
+:root[data-focus='on'] .assignment-card__snippet,
+:root[data-focus='on'] .course-card__meta,
+:root[data-focus='on'] .today-summary__note,
+:root[data-focus='on'] .shell-nav {
+  display: none;
+}
+
+/* ---- Reading overlay tint (Irlen-style colored filter) -------------------------------------------------------- */
+.reading-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 900;
+  opacity: 0;
+  mix-blend-mode: multiply;
+  transition: opacity var(--motion-base) var(--ease);
+}
+:root[data-theme='dark'] .reading-overlay {
+  mix-blend-mode: screen;
+}
+:root[data-overlay-tint='blue'] .reading-overlay { background: #bcd6f5; opacity: 0.16; }
+:root[data-overlay-tint='green'] .reading-overlay { background: #c7e8c9; opacity: 0.16; }
+:root[data-overlay-tint='yellow'] .reading-overlay { background: #f7e9a8; opacity: 0.14; }
+:root[data-overlay-tint='rose'] .reading-overlay { background: #f3c9d6; opacity: 0.14; }
+:root[data-theme='dark'][data-overlay-tint='blue'] .reading-overlay { background: #1c3a5c; opacity: 0.35; }
+:root[data-theme='dark'][data-overlay-tint='green'] .reading-overlay { background: #1c3a24; opacity: 0.35; }
+:root[data-theme='dark'][data-overlay-tint='yellow'] .reading-overlay { background: #4a3d10; opacity: 0.3; }
+:root[data-theme='dark'][data-overlay-tint='rose'] .reading-overlay { background: #4a1d2c; opacity: 0.3; }
 
 /* ---- Motion --------------------------------------------------------------- */
 :root[data-motion='reduced'] * {

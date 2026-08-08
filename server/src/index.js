@@ -10,6 +10,8 @@ import {
 } from './googleAuth.js'
 import { listCourses, listCourseWork, getCourseWork } from './classroom.js'
 import { simplifyAssignment } from './simplify.js'
+import { buildTodo } from './todo.js'
+import { generateDailySummary } from './dailySummary.js'
 import { DEMO_USER, DEMO_COURSES, demoCourseWork, findDemoCourseWork } from './demoData.js'
 
 const app = express()
@@ -207,6 +209,52 @@ app.post(
     const rewrite = await simplifyAssignment(assignment, course)
     rewriteCache.set(cacheKey, rewrite)
     res.json({ rewrite, cached: false })
+  }),
+)
+
+// ---------------------------------------------------------------- today / to-do
+
+app.get(
+  '/api/todo',
+  route(async (req, res) => {
+    const session = await requireSession(req)
+    const { courses, items } = await buildTodo(session)
+    res.json({ courses, items })
+  }),
+)
+
+/**
+ * The daily briefing shown at the top of the Today page. Cached per
+ * user/mode/day/tone so re-opening the page during the same day is instant —
+ * a new one is only generated once a day, or when the person picks a
+ * different tone, or asks to refresh explicitly.
+ */
+const summaryCache = new Map()
+
+app.post(
+  '/api/daily-summary',
+  route(async (req, res) => {
+    const session = await requireSession(req)
+    const tone = ['plain', 'encouraging', 'brief'].includes(req.body?.tone) ? req.body.tone : 'plain'
+    const refresh = Boolean(req.body?.refresh)
+
+    if (!isClaudeConfigured()) {
+      return res.status(503).json({
+        error: 'The daily summary needs an Anthropic API key. Add ANTHROPIC_API_KEY to server/.env.',
+      })
+    }
+
+    const identity = session.mode === 'demo' ? 'demo' : req.session?.user?.email ?? 'unknown'
+    const today = new Date().toISOString().slice(0, 10)
+    const cacheKey = `${identity}:${today}:${tone}`
+    if (!refresh && summaryCache.has(cacheKey)) {
+      return res.json({ summary: summaryCache.get(cacheKey), cached: true })
+    }
+
+    const { items } = await buildTodo(session)
+    const summary = await generateDailySummary(items, tone)
+    summaryCache.set(cacheKey, summary)
+    res.json({ summary, cached: false })
   }),
 )
 

@@ -122,9 +122,10 @@
 .shell-main {
   flex: 1;
   width: 100%;
-  max-width: 1040px;
+  max-width: var(--content-max-width, 1040px);
   margin: 0 auto;
   padding: var(--space-6) var(--space-5) var(--space-8);
+  transition: max-width var(--motion-base) var(--ease);
 }
 
 @media (max-width: 640px) {

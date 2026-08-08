@@ -62,3 +62,15 @@ export interface Me {
   googleConfigured: boolean
   claudeConfigured: boolean
 }
+
+export interface TodoItem extends CourseWork {
+  courseName: string
+}
+
+export type SummaryTone = 'plain' | 'encouraging' | 'brief'
+
+export interface DailySummary {
+  headline: string
+  highlights: string[]
+  note: string
+}
