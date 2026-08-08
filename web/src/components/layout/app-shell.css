@@ -1,0 +1,142 @@
+.shell-header {
+  border-bottom: var(--border-width) solid var(--border);
+  background: var(--bg-raised);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.shell-header__inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.shell-brand__mark {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.shell-nav {
+  display: flex;
+  gap: var(--space-4);
+  flex: 1;
+}
+
+.shell-nav__link {
+  text-decoration: none;
+  color: var(--ink-soft);
+  font-weight: 600;
+  padding: var(--space-2) 0;
+  border-bottom: 2px solid transparent;
+}
+
+.shell-nav__link.active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.shell-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
+.shell-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.shell-icon-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+.shell-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.9rem;
+}
+
+.shell-user__name {
+  color: var(--ink-soft);
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-demo-badge {
+  background: var(--warn-soft);
+  border: var(--border-width) solid var(--warn-soft-border);
+  color: var(--warn);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+}
+
+.shell-textbtn {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  font-weight: 600;
+  padding: 0;
+}
+.shell-textbtn:hover {
+  color: var(--ink);
+}
+
+.shell-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-8);
+}
+
+@media (max-width: 640px) {
+  .shell-header__inner {
+    flex-wrap: wrap;
+    padding: var(--space-3) var(--space-4);
+  }
+  .shell-nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .shell-icon-btn__label {
+    display: none;
+  }
+}

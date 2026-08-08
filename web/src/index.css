@@ -1,111 +1,244 @@
+/* ---------------------------------------------------------------------
+   cleared — design tokens
+   Flat, high-legibility, no gradients or drop shadows. Every visual
+   "mode" below is a real accessibility setting, driven by data-attributes
+   on <html> that lib/settings.tsx sets — not decoration.
+--------------------------------------------------------------------- */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --font-standard:
+    'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-dyslexia:
+    'OpenDyslexic', 'Comic Sans MS', 'Atkinson Hyperlegible', -apple-system, sans-serif;
+  --font-mono: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --border-width: 1.5px;
+
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* ---- Light theme (default) ---------------------------------------- */
+:root,
+:root[data-theme='light'] {
+  --bg: #faf9f6;
+  --bg-raised: #ffffff;
+  --bg-sunken: #f1efe9;
+  --ink: #1c1b19;
+  --ink-soft: #524f48;
+  --ink-faint: #8a867c;
+  --border: #ddd8cd;
+  --border-strong: #b8b2a2;
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+  --accent: #205e5a;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3ebe9;
+  --accent-soft-border: #b9cdc9;
+
+  --focus-ring: #1857c9;
+
+  --warn: #8a5a12;
+  --warn-soft: #f6ecd9;
+  --warn-soft-border: #e2c99a;
+
+  --danger: #9c3b2e;
+  --danger-soft: #f7e9e6;
+  --danger-soft-border: #e5b6ac;
+
+  --good: #276b3f;
+  --good-soft: #e6f0e8;
+  --good-soft-border: #b6d3c0;
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+/* ---- Dark theme ------------------------------------------------------ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #17181a;
+  --bg-raised: #202225;
+  --bg-sunken: #101112;
+  --ink: #f1efe9;
+  --ink-soft: #c7c3b8;
+  --ink-faint: #8d897d;
+  --border: #34363a;
+  --border-strong: #4b4e53;
+
+  --accent: #7fd3c7;
+  --accent-ink: #0c1917;
+  --accent-soft: #1c2b29;
+  --accent-soft-border: #2e4b47;
+
+  --focus-ring: #7fb3ff;
+
+  --warn: #e0b158;
+  --warn-soft: #2c2416;
+  --warn-soft-border: #4f3f20;
+
+  --danger: #e08f7e;
+  --danger-soft: #2c1c19;
+  --danger-soft-border: #4f2e28;
+
+  --good: #86cf9f;
+  --good-soft: #1a2b20;
+  --good-soft-border: #2c4a36;
+}
+
+/* ---- High contrast (composes with either theme) ---------------------- */
+:root[data-contrast='high'][data-theme='light'] {
+  --bg: #ffffff;
+  --ink: #000000;
+  --ink-soft: #1a1a1a;
+  --ink-faint: #333333;
+  --border: #000000;
+  --border-strong: #000000;
+  --accent: #0a3d3a;
+  --accent-soft: #d7e8e5;
+  --accent-soft-border: #0a3d3a;
+  --focus-ring: #0022cc;
+}
+:root[data-contrast='high'][data-theme='dark'] {
+  --bg: #000000;
+  --bg-raised: #0a0a0a;
+  --ink: #ffffff;
+  --ink-soft: #f2f2f2;
+  --ink-faint: #d0d0d0;
+  --border: #ffffff;
+  --border-strong: #ffffff;
+  --accent: #9dfff0;
+  --accent-ink: #000000;
+  --accent-soft: #12302c;
+  --accent-soft-border: #9dfff0;
+  --focus-ring: #9dc4ff;
+}
+:root[data-contrast='high'] {
+  --border-width: 2px;
+}
+
+/* ---- Text size --------------------------------------------------------- */
+:root[data-text-size='standard'] { --text-scale: 1; }
+:root[data-text-size='large'] { --text-scale: 1.18; }
+:root[data-text-size='xlarge'] { --text-scale: 1.4; }
+
+/* ---- Typeface ----------------------------------------------------------- */
+:root[data-typeface='standard'] {
+  --body-font: var(--font-standard);
+  --letter-spacing: 0;
+  --word-spacing: 0;
+}
+:root[data-typeface='dyslexia-friendly'] {
+  --body-font: var(--font-dyslexia);
+  --letter-spacing: 0.02em;
+  --word-spacing: 0.12em;
+}
+
+/* ---- Line spacing -------------------------------------------------------- */
+:root[data-line-spacing='normal'] { --line-height: 1.5; --paragraph-gap: 1em; }
+:root[data-line-spacing='relaxed'] { --line-height: 1.85; --paragraph-gap: 1.4em; }
+
+/* ---- Motion --------------------------------------------------------------- */
+:root[data-motion='reduced'] * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: calc(16px * var(--text-scale, 1));
 }
 
 body {
   margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body-font, var(--font-standard));
+  letter-spacing: var(--letter-spacing, 0);
+  word-spacing: var(--word-spacing, 0);
+  line-height: var(--line-height, 1.5);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
+h1, h2, h3, h4 {
   margin: 0;
+  font-weight: 700;
+  letter-spacing: var(--letter-spacing, 0);
+  line-height: 1.25;
+  color: var(--ink);
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+p { margin: 0 0 var(--paragraph-gap, 1em); }
+p:last-child { margin-bottom: 0; }
+
+a { color: inherit; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  z-index: 1000;
+  transition: top var(--motion-base) var(--ease);
+}
+.skip-link:focus-visible {
+  top: 8px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
