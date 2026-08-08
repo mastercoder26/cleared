@@ -232,10 +232,13 @@
 }
 
 /* ---- Focus mode: fewer things visible at once -------------------------------------------------------- */
+/* Strips supporting detail, never wayfinding. Hiding .shell-nav here used to
+   strand people: turning on focus mode removed the only route between Today,
+   Plan, and Classes, with no affordance saying where it went. Reducing detail
+   is a legitimate accommodation; removing navigation is just being lost. */
 :root[data-focus='on'] .assignment-card__snippet,
 :root[data-focus='on'] .course-card__meta,
-:root[data-focus='on'] .today-summary__note,
-:root[data-focus='on'] .shell-nav {
+:root[data-focus='on'] .today-summary__note {
   display: none;
 }
 

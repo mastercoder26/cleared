@@ -8,10 +8,13 @@
   position: absolute;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.35);
+  /* Deliberately light. At 0.35 the page read as broken rather than focused —
+     most of the screen went charcoal and people assumed it had failed to load.
+     A ruler should draw the eye to a line, not black out everything else. */
+  background: rgba(0, 0, 0, 0.14);
 }
 :root[data-theme='dark'] .reading-ruler__dim {
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.3);
 }
 .reading-ruler__dim--top {
   top: 0;

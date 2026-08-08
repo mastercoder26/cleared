@@ -38,6 +38,10 @@ app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', config.webOrigin)
   res.set('Access-Control-Allow-Credentials', 'true')
   res.set('Access-Control-Allow-Headers', 'Content-Type')
+  // Without this, the browser's preflight rejects PUT and every progress save
+  // fails silently. curl never sends a preflight, so this only shows up in a
+  // real browser — which is where it matters.
+  res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS')
   if (req.method === 'OPTIONS') return res.sendStatus(204)
   next()
 })
