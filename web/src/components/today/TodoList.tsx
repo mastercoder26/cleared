@@ -1,51 +1,41 @@
 import { Link } from 'react-router-dom'
-import type { TodoItem } from '../../lib/types'
+import type { TodoItem, WorkStatus } from '../../lib/types'
 import { dueUrgency, formatDue, relativeDue } from '../../lib/due'
 import { useSettings } from '../../lib/settings'
+import { groupByClass, groupByMeaning, type RankedItem, type TodoGroup } from './todayMath'
+import { StatusControl } from './StatusControl'
 import './today.css'
 
-interface Group {
-  label: string
-  items: TodoItem[]
+/** Groups longer than this collapse behind a "Show more" button by default. */
+const DEFAULT_VISIBLE_PER_GROUP = 5
+
+interface Props {
+  ranked: RankedItem[]
+  collapsedGroups: string[]
+  onToggleCollapse: (label: string) => void
+  expandedGroups: string[]
+  onToggleExpand: (key: string) => void
+  onStatusChange: (item: TodoItem, status: WorkStatus) => void
+  onDismiss: (item: TodoItem) => void
 }
 
-/** Groups by urgency (due sort) or by class (class sort) — whichever the person picked in feed prefs. */
-function groupItems(items: TodoItem[], sort: 'due' | 'class'): Group[] {
-  if (sort === 'class') {
-    const byCourse = new Map<string, TodoItem[]>()
-    for (const item of items) {
-      const list = byCourse.get(item.courseName) ?? []
-      list.push(item)
-      byCourse.set(item.courseName, list)
-    }
-    return [...byCourse.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([label, groupItems]) => ({ label, items: groupItems }))
-  }
+export function TodoList({
+  ranked,
+  collapsedGroups,
+  onToggleCollapse,
+  expandedGroups,
+  onToggleExpand,
+  onStatusChange,
+  onDismiss,
+}: Props) {
+  const { settings } = useSettings()
+  const groups: TodoGroup[] = settings.todoSort === 'class' ? groupByClass(ranked) : groupByMeaning(ranked)
 
-  const buckets: Record<string, TodoItem[]> = { Overdue: [], 'Due today': [], 'Due this week': [], Later: [], 'No due date': [] }
-  for (const item of items) {
-    const urgency = dueUrgency(item.dueAt)
-    if (urgency === 'overdue') buckets.Overdue.push(item)
-    else if (urgency === 'today') buckets['Due today'].push(item)
-    else if (urgency === 'soon') buckets['Due this week'].push(item)
-    else if (urgency === 'later') buckets.Later.push(item)
-    else buckets['No due date'].push(item)
-  }
-  return Object.entries(buckets)
-    .filter(([, groupItems]) => groupItems.length > 0)
-    .map(([label, groupItems]) => ({ label, items: groupItems }))
-}
-
-export function TodoList({ items }: { items: TodoItem[] }) {
-  const { settings, toggleDismissed } = useSettings()
-  const groups = groupItems(items, settings.todoSort)
-
-  if (items.length === 0) {
+  if (ranked.length === 0) {
     return (
       <div className="todo-empty">
         <p className="todo-empty__title">Nothing outstanding.</p>
-        <p>Everything visible in your feed is either turned in or hidden. Nice.</p>
+        <p>Everything visible in your feed is either done or hidden. Nice.</p>
       </div>
     )
   }
@@ -53,25 +43,106 @@ export function TodoList({ items }: { items: TodoItem[] }) {
   return (
     <div className="todo-groups">
       {groups.map((group) => (
-        <section key={group.label} aria-labelledby={`todo-group-${group.label}`}>
-          <h3 id={`todo-group-${group.label}`} className="todo-group__label" data-emphasis={group.label === 'Overdue' || group.label === 'Due today'}>
-            {group.label}
-            <span className="todo-group__count">{group.items.length}</span>
-          </h3>
-          <ul className="todo-list">
-            {group.items.map((item) => (
-              <TodoRow key={item.id} item={item} onDismiss={() => toggleDismissed(item.id)} />
-            ))}
-          </ul>
-        </section>
+        <TodoGroupSection
+          key={group.label}
+          group={group}
+          collapsed={collapsedGroups.includes(group.label)}
+          onToggleCollapse={() => onToggleCollapse(group.label)}
+          expanded={expandedGroups.includes(group.label)}
+          onToggleExpand={() => onToggleExpand(group.label)}
+          onStatusChange={onStatusChange}
+          onDismiss={onDismiss}
+        />
       ))}
     </div>
   )
 }
 
-function TodoRow({ item, onDismiss }: { item: TodoItem; onDismiss: () => void }) {
+function TodoGroupSection({
+  group,
+  collapsed,
+  onToggleCollapse,
+  expanded,
+  onToggleExpand,
+  onStatusChange,
+  onDismiss,
+}: {
+  group: TodoGroup
+  collapsed: boolean
+  onToggleCollapse: () => void
+  expanded: boolean
+  onToggleExpand: () => void
+  onStatusChange: (item: TodoItem, status: WorkStatus) => void
+  onDismiss: (item: TodoItem) => void
+}) {
+  const headingId = `todo-group-${group.label.replace(/\s+/g, '-')}`
+  const visible = expanded ? group.items : group.items.slice(0, DEFAULT_VISIBLE_PER_GROUP)
+  const hiddenCount = group.items.length - visible.length
+
+  return (
+    <section aria-labelledby={headingId}>
+      <button
+        type="button"
+        className="todo-group__toggle"
+        aria-expanded={!collapsed}
+        onClick={onToggleCollapse}
+      >
+        <h3 id={headingId} className="todo-group__label" data-emphasis={group.label === 'Stuck' || group.label === 'Overdue' || group.label === 'Due today'}>
+          <svg
+            className="todo-group__chevron"
+            data-collapsed={collapsed}
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {group.label}
+          <span className="todo-group__count">{group.items.length}</span>
+        </h3>
+      </button>
+
+      {!collapsed && (
+        <>
+          <ul className="todo-list">
+            {visible.map((entry) => (
+              <TodoRow
+                key={entry.item.id}
+                entry={entry}
+                onStatusChange={onStatusChange}
+                onDismiss={onDismiss}
+              />
+            ))}
+          </ul>
+          {hiddenCount > 0 && (
+            <button type="button" className="todo-group__more" onClick={onToggleExpand}>
+              Show {hiddenCount} more
+            </button>
+          )}
+          {expanded && group.items.length > DEFAULT_VISIBLE_PER_GROUP && (
+            <button type="button" className="todo-group__more" onClick={onToggleExpand}>
+              Show fewer
+            </button>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
+function TodoRow({
+  entry,
+  onStatusChange,
+  onDismiss,
+}: {
+  entry: RankedItem
+  onStatusChange: (item: TodoItem, status: WorkStatus) => void
+  onDismiss: (item: TodoItem) => void
+}) {
+  const { item, status, isDone } = entry
   const urgency = dueUrgency(item.dueAt)
-  const done = item.submissionState === 'TURNED_IN' || item.submissionState === 'RETURNED'
 
   return (
     <li className="todo-row" data-urgency={urgency}>
@@ -80,27 +151,31 @@ function TodoRow({ item, onDismiss }: { item: TodoItem; onDismiss: () => void })
         <span className="todo-row__title">{item.title}</span>
         <span className="todo-row__due">
           {formatDue(item.dueAt)}
-          {item.dueAt && !done && <span className="todo-row__relative"> · {relativeDue(item.dueAt)}</span>}
+          {item.dueAt && !isDone && <span className="todo-row__relative"> · {relativeDue(item.dueAt)}</span>}
         </span>
       </Link>
-      <button
-        type="button"
-        className="todo-row__dismiss"
-        onClick={onDismiss}
-        title="Hide from your Today list only — this doesn't change anything in Classroom"
-        aria-label={`Hide "${item.title}" from your Today list. This only affects cleared, not Classroom.`}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M3 3l18 18M10.7 5.1A9.8 9.8 0 0 1 12 5c5 0 8.5 3.5 10 7-.5 1.1-1.2 2.2-2.1 3.1M6.5 6.6C4.6 7.9 3.1 9.7 2 12c1.5 3.5 5 7 10 7 1.3 0 2.5-.2 3.6-.6M9.9 10a3 3 0 0 0 4.2 4.2"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="todo-row__dismiss-label">Hide</span>
-      </button>
+
+      <div className="todo-row__actions">
+        <StatusControl itemTitle={item.title} status={status} onChange={(next) => onStatusChange(item, next)} />
+        <button
+          type="button"
+          className="todo-row__dismiss"
+          onClick={() => onDismiss(item)}
+          title="Hide from your Today list only — this doesn't change anything in Classroom"
+          aria-label={`Hide "${item.title}" from your Today list. This only affects cleared, not Classroom.`}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M3 3l18 18M10.7 5.1A9.8 9.8 0 0 1 12 5c5 0 8.5 3.5 10 7-.5 1.1-1.2 2.2-2.1 3.1M6.5 6.6C4.6 7.9 3.1 9.7 2 12c1.5 3.5 5 7 10 7 1.3 0 2.5-.2 3.6-.6M9.9 10a3 3 0 0 0 4.2 4.2"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="todo-row__dismiss-label">Hide</span>
+        </button>
+      </div>
     </li>
   )
 }

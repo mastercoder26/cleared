@@ -48,12 +48,157 @@
   font-size: 0.88rem;
 }
 
+.course-card__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-1);
+}
+
+.course-card__pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  padding: 2px var(--space-2);
+}
+
+.course-card__pill--stuck {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.course-card__next-due {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.course-card__progress {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  margin-top: var(--space-2);
+  overflow: hidden;
+}
+
+.course-card__progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--good);
+  border-radius: 999px;
+}
+
 .course-card__chevron {
   flex-shrink: 0;
   color: var(--ink-faint);
 }
 
 .course-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ---- Coursework filters ---------------------------------------------------- */
+
+.coursework-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.coursework-filters__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: 999px;
+  padding: 5px var(--space-3);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.coursework-filters__btn:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.coursework-filters__btn[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.coursework-filters__count {
+  background: var(--bg-sunken);
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+.coursework-filters__btn[aria-pressed='true'] .coursework-filters__count {
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+}
+
+/* ---- Coursework card ---------------------------------------------------- */
+
+.coursework-card {
+  display: block;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-left-width: 4px;
+  border-left-color: var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  transition: border-color var(--motion-fast) var(--ease), transform var(--motion-fast) var(--ease);
+}
+.coursework-card:hover {
+  border-color: var(--accent);
+  transform: translateX(2px);
+}
+.coursework-card[data-urgency='overdue'] { border-left-color: var(--danger); }
+.coursework-card[data-urgency='today'] { border-left-color: var(--warn); }
+
+.coursework-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.coursework-card__title {
+  font-size: 1.05rem;
+}
+
+.coursework-card__due {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-2);
+}
+
+.coursework-card__snippet {
+  color: var(--ink-soft);
+  margin-bottom: var(--space-3);
+}
+
+.coursework-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--accent);
+}
+
+.coursework-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

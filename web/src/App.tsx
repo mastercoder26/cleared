@@ -6,6 +6,8 @@ import { TodayPage } from './pages/TodayPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { CourseWorkPage } from './pages/CourseWorkPage'
 import { AssignmentPage } from './pages/AssignmentPage'
+import { PlanPage } from './pages/PlanPage'
+import { FocusPage } from './pages/FocusPage'
 import { StateBlock } from './components/ui/StateBlock'
 
 function App() {
@@ -24,7 +26,12 @@ function App() {
       <Routes>
         <Route path="/" element={signedIn ? <Navigate to="/today" replace /> : <SignInPage />} />
         <Route path="/today" element={signedIn ? <TodayPage /> : <Navigate to="/" replace />} />
+        <Route path="/plan" element={signedIn ? <PlanPage /> : <Navigate to="/" replace />} />
         <Route path="/courses" element={signedIn ? <CoursesPage /> : <Navigate to="/" replace />} />
+        <Route
+          path="/focus/:courseId/:workId"
+          element={signedIn ? <FocusPage /> : <Navigate to="/" replace />}
+        />
         <Route
           path="/courses/:courseId"
           element={signedIn ? <CourseWorkPage /> : <Navigate to="/" replace />}
